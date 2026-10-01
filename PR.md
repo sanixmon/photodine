@@ -16,6 +16,6 @@ Closes tickets:
 - #10 gallery-import
 - #11 export
 
-Status: DRAFT — ticket 01 in progress. Frontier: [01].
+Status: DRAFT — ticket 01 merged (6766d92). Frontier: [02].
 Merge strategy: ticket branches merge into photopia-v1 via merger subagents (ff or --no-ff, verify build).
 Final gate: code-review on photopia-v1, fix in single agent, then mark ready.
