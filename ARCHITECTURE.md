@@ -1,4 +1,4 @@
-# Photopia Architecture
+# Photodine Architecture
 
 ## Dependency injection: Hilt
 
@@ -11,7 +11,7 @@ Hilt is the DI framework (Koin was considered and rejected). Reasons:
   benefit here; it remains an option only if the project ever goes
   Kotlin-multiplatform.
 
-Wiring: `:app` declares `@HiltAndroidApp PhotopiaApp`; `MainActivity` is an
+Wiring: `:app` declares `@HiltAndroidApp PhotodineApp`; `MainActivity` is an
 `@AndroidEntryPoint` hosting the Compose `NavHost`. Each feature ViewModel is a
 `@HiltViewModel` with an `@Inject` constructor. Singleton engine bindings live
 in `:core:engine`'s `EngineModule` (`@Module @InstallIn(SingletonComponent)`).

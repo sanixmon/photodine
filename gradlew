@@ -1,5 +1,5 @@
 #!/bin/sh
-# Minimal Gradle wrapper bootstrap for Photopia.
+# Minimal Gradle wrapper bootstrap for Photodine.
 # Reads gradle/wrapper/gradle-wrapper.properties, downloads and caches the
 # distribution under $GRADLE_USER_HOME/wrapper/dists, then execs Gradle.
 # (No binary wrapper jar is committed; behavior is equivalent for CI use.)
@@ -11,9 +11,12 @@ DISTRIBUTION_URL="$(sed -n 's/^distributionUrl=//p' "$PROP_FILE" | sed 's/\\:/:/
 DIST_NAME="$(basename "$DISTRIBUTION_URL" .zip)"
 GRADLE_USER_HOME="${GRADLE_USER_HOME:-$HOME/.gradle}"
 DIST_DIR="$GRADLE_USER_HOME/wrapper/dists/$DIST_NAME"
-GRADLE_BIN="$DIST_DIR/$DIST_NAME/bin/gradle"
-
+GRADLE_BIN="$DIST_DIR/$(echo "$DIST_NAME" | sed 's/-bin$//;s/-all$//')/bin/gradle"
 if [ ! -x "$GRADLE_BIN" ]; then
+    GRADLE_BIN="$(find "$DIST_DIR" -name gradle -type f -perm -111 2>/dev/null | head -n 1)"
+fi
+
+if [ -z "$GRADLE_BIN" ] || [ ! -x "$GRADLE_BIN" ]; then
     echo "Downloading $DISTRIBUTION_URL ..." >&2
     mkdir -p "$DIST_DIR"
     TMP_ZIP="$DIST_DIR/gradle.zip"

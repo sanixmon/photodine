@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.photopia.feature.colorpicker"
+    namespace = "dev.photodine.feature.colorpicker"
     compileSdk = 36
 
     defaultConfig {

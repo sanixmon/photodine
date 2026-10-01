@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.photopia.feature.canvas"
+    namespace = "dev.photodine.feature.canvas"
     compileSdk = 36
 
     defaultConfig {

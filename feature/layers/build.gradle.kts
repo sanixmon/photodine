@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.photopia.feature.layers"
+    namespace = "dev.photodine.feature.layers"
     compileSdk = 36
 
     defaultConfig {

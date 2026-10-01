@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.photopia.feature.export"
+    namespace = "dev.photodine.feature.export"
     compileSdk = 36
 
     defaultConfig {

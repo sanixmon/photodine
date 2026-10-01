@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.photopia.core.ui"
+    namespace = "dev.photodine.core.ui"
     compileSdk = 36
 
     defaultConfig {

@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "dev.photopia.app"
+    namespace = "dev.photodine.app"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.photopia"
+        applicationId = "dev.photodine"
         minSdk = 29
         targetSdk = 36
         versionCode = 1

@@ -12,7 +12,7 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "Photopia"
+rootProject.name = "Photodine"
 include(":app")
 include(":core:engine")
 include(":core:ui")

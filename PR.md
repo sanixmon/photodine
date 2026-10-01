@@ -1,10 +1,10 @@
-# Photopia v1 — Implementation PR (DRAFT)
+# Photodine v1 — Implementation PR (DRAFT)
 
-Base: main ← Head: photopia-v1
+Base: main ← Head: photodine-v1
 
-Closes: SPEC.md (Photopia v1 Product & Engineering Spec)
+Closes: SPEC.md (Photodine v1 Product & Engineering Spec)
 Closes tickets:
-- #01 project-scaffold (.scratch/photopia/issues/01-project-scaffold.md)
+- #01 project-scaffold (.scratch/photodine/issues/01-project-scaffold.md)
 - #02 gles-engine-blank-canvas
 - #03 multi-layer-compositing
 - #04 layer-panel
@@ -16,6 +16,6 @@ Closes tickets:
 - #10 gallery-import
 - #11 export
 
-Status: DRAFT — ticket 01 merged (6766d92). Frontier: [02].
-Merge strategy: ticket branches merge into photopia-v1 via merger subagents (ff or --no-ff, verify build).
-Final gate: code-review on photopia-v1, fix in single agent, then mark ready.
+Status: DRAFT — ticket 01 merged. Frontier: [02].
+Merge strategy: ticket branches merge into photodine-v1 via merger subagents (ff or --no-ff, verify build).
+Final gate: code-review on photodine-v1, fix in single agent, then mark ready.

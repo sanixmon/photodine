@@ -1,4 +1,4 @@
-# Photopia v1 — Product & Engineering Spec
+# Photodine v1 — Product & Engineering Spec
 
 ## Problem Statement
 
@@ -6,7 +6,7 @@ Mobile photo editing on Android is dominated by closed-source, subscription-gate
 
 ## Solution
 
-Photopia is an open-source, layer-based photo editor for Android built with Kotlin and Jetpack Compose. It provides a GPU-accelerated compositing engine, a natural brush tool with smooth stroke interpolation, and an intuitive mobile-native UI. Users can import photos from their gallery, composite them as layers, paint on top, and export the final result as PNG or JPEG. The project is MIT-licensed and hosted on GitHub, funded by community sponsorship.
+Photodine is an open-source, layer-based photo editor for Android built with Kotlin and Jetpack Compose. It provides a GPU-accelerated compositing engine, a natural brush tool with smooth stroke interpolation, and an intuitive mobile-native UI. Users can import photos from their gallery, composite them as layers, paint on top, and export the final result as PNG or JPEG. The project is MIT-licensed and hosted on GitHub, funded by community sponsorship.
 
 ## User Stories
 
@@ -205,4 +205,4 @@ The primary test seam is **`:core:engine`'s public API** — the compositing and
 - **Blend mode shader authorship**: Each blend mode shader should be a standalone `.glsl` file in `:core:engine/src/main/glsl/` to make community contribution of new blend modes a self-contained, reviewable PR.
 - **Driver fragmentation risk**: OpenGL ES 3.0 driver quality varies across Mali (Samsung/MediaTek budget devices), Adreno (Snapdragon), and PowerVR (older chipsets). The engine should include a driver capability check at startup and a fallback code path (CPU compositing via `android.graphics.BlendMode`) for devices that fail GLES 3.0 conformance tests.
 - **Future project file**: When native save/load is added, OpenRaster (`.ora`) is the preferred format — it is an open ZIP-based standard with existing Rust/Python parsers and aligns with the project's open-source ethos.
-- **Name**: Project name is **Photopia**. Package namespace: `dev.photopia`.
+- **Name**: Project name is **Photodine**. Package namespace: `dev.photodine`.

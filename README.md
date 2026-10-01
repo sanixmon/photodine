@@ -1,6 +1,6 @@
-# Photopia
+# Photodine
 
-Photopia is an open-source, layer-based photo editor for Android, built with
+Photodine is an open-source, layer-based photo editor for Android, built with
 Kotlin and Jetpack Compose. Import photos, composite them as layers with blend
 modes and opacity, paint with a pressure-aware brush, and export to PNG/JPEG.
 MIT-licensed, offline-first, no account required.
@@ -18,7 +18,7 @@ MIT-licensed, offline-first, no account required.
 ./gradlew lint assembleDebug detekt   # what CI runs
 ```
 
-Install the debug APK on a device/emulator and launch **Photopia**: a stub
+Install the debug APK on a device/emulator and launch **Photodine**: a stub
 `NavHost` with `new-canvas` and `canvas` routes is in place (ticket 01).
 
 ## Module map

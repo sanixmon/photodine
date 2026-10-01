@@ -1,5 +1,5 @@
 @echo off
-rem Minimal Gradle wrapper bootstrap for Photopia (Windows).
+rem Minimal Gradle wrapper bootstrap for Photodine (Windows).
 setlocal
 set "APP_HOME=%~dp0"
 for /f "tokens=1,* delims==" %%a in ('findstr /b "distributionUrl" "%APP_HOME%gradle\wrapper\gradle-wrapper.properties"') do set "DIST_URL=%%b"

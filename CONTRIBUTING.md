@@ -1,4 +1,4 @@
-# Contributing to Photopia
+# Contributing to Photodine
 
 ## Getting started
 
