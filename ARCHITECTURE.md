@@ -62,6 +62,41 @@ side effects (navigation, export I/O, MediaStore writes) are emitted via a
 - A startup GLES capability check selects a CPU-compositing fallback on devices
   failing GLES 3.0 conformance (Mali/Adreno/PowerVR driver fragmentation).
 
+### Engine public API (`dev.photodine.core.engine`)
+
+Downstream modules depend only on these abstractions (bound in
+`EngineModule` as `@Singleton`); GL/EGL types never leak past them.
+
+- `Compositor` — engine entry point and primary test seam. UI-safe: every
+  method posts to the private `"PhotodineGL"` render thread and returns
+  immediately. Lifecycle: `initialiseCanvas(w, h)` allocates textures,
+  `attachSurface(SurfaceTexture, w, h)` / `updateSurfaceSize` /
+  `detachSurface` track the `TextureView`, `setViewTransform(zoom, ox, oy)`
+  pans/zooms (zoom clamped 0.1x-32x via `MIN_ZOOM`/`MAX_ZOOM`),
+  `requestRender()` kicks a frame, `release()` tears down. `capability` /
+  `cpuFallback` expose the startup GLES 3.0 check outcome.
+- `TextureStore` — GPU layer-texture storage: one RGBA8 layer texture plus
+  the ping-pong accumulator FBO pair. GL-thread confined; owned by
+  `GlCompositor`, never injected into features directly.
+- `CanvasSize` — validated `width x height` (1..`MAX_DIMENSION` = 2048 per
+  axis) shared by the engine and the new-canvas flow, including `PRESETS`.
+- `GlesCapability` — `GL_VERSION` string plus `isEs3` / `cpuFallback` flags.
+- `BlendMode` — Normal/Multiply/Screen/Overlay/Darken/Lighten enum; cached
+  programs per mode arrive with the compositing tickets.
+- Internals (`EglManager`, `GlTextureStore`, `GlUtils`, display shaders) stay
+  package-visible to `:core:engine`. Ticket 02 draws a trivial
+  passthrough/checkerboard display program; blend `.glsl` stubs are untouched.
+
+### Canvas gestures (`:feature:canvas`)
+
+- `CanvasTextureView` (a `TextureView` in `AndroidView`) owns touch:
+  one-finger drag pans, two-finger pinch zooms via raw `MotionEvent`
+  tracking. Gesture math is the pure `ViewTransform` value type
+  (`withPan` / focus-preserving `withZoom`), unit-tested without Android.
+- `CanvasViewModel` mirrors size + transform as MVI state and forwards the
+  `Compositor` to the view; `NewCanvasViewModel` validates the bottom-sheet
+  preset/custom-size flow and emits `NavigateToCanvas(w, h)`.
+
 ## Versions
 
 AGP 8.7.3, Kotlin 2.2.20, Compose BOM 2026.08.00, Hilt 2.59.2 (KSP),
