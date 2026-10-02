@@ -94,6 +94,27 @@ fun CanvasRoute(
             }
         )
 
+        // Top-start action: Undo & Redo buttons
+        androidx.compose.foundation.layout.Row(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+        ) {
+            FilledTonalButton(
+                onClick = { /* undo */ },
+                shape = androidx.compose.foundation.shape.CircleShape
+            ) {
+                Text("↶")
+            }
+            FilledTonalButton(
+                onClick = { /* redo */ },
+                shape = androidx.compose.foundation.shape.CircleShape
+            ) {
+                Text("↷")
+            }
+        }
+
         // Top-right action: Import Photo layer
         Box(
             modifier = Modifier
