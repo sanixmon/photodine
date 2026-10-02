@@ -58,6 +58,7 @@ class GlCompositor @Inject constructor() : Compositor {
     private var displayProgram = 0
     private val blendPrograms = mutableMapOf<BlendMode, Int>()
     private var quadBuffer: FloatBuffer? = null
+    private var stampProgram = 0
     private var frameCount = 0
     private var lastFpsLogMs = 0L
 
@@ -163,6 +164,65 @@ class GlCompositor @Inject constructor() : Compositor {
         requestRender()
     }
 
+    override fun renderStamps(stamps: List<BrushStamp>, targetLayerId: UUID) {
+        if (stamps.isEmpty()) return
+        glHandler.post {
+            if (!textures.isInitialised) return@post
+            val targetLayer = synchronized(layerLock) {
+                layerList.firstOrNull { it.id == targetLayerId }
+            } ?: return@post
+
+            egl.makePbufferCurrent()
+            val targetFbo = textures.getFramebufferForTexture(targetLayer.textureId)
+            GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, targetFbo)
+            GLES30.glViewport(0, 0, canvasW, canvasH)
+            GLES30.glEnable(GLES30.GL_BLEND)
+
+            if (stampProgram == 0) {
+                stampProgram = GlUtils.createProgram(STAMP_VERTEX, STAMP_FRAGMENT)
+            }
+            val prog = stampProgram
+            GLES30.glUseProgram(prog)
+
+            val quad = quadBuffer ?: return@post
+            val posLoc = GLES30.glGetAttribLocation(prog, "aPos")
+            GLES30.glEnableVertexAttribArray(posLoc)
+            GLES30.glVertexAttribPointer(posLoc, 2, GLES30.GL_FLOAT, false, 0, quad)
+
+            for (stamp in stamps) {
+                if (stamp.isEraser) {
+                    GLES30.glBlendFunc(GLES30.GL_ZERO, GLES30.GL_ONE_MINUS_SRC_ALPHA)
+                } else {
+                    GLES30.glBlendFunc(GLES30.GL_ONE, GLES30.GL_ONE_MINUS_SRC_ALPHA)
+                }
+
+                val ndcX = (stamp.x / canvasW) * 2f - 1f
+                val ndcY = 1f - (stamp.y / canvasH) * 2f
+                val radiusX = stamp.size / canvasW
+                val radiusY = stamp.size / canvasH
+
+                setUniform2f(prog, "uCenter", ndcX, ndcY)
+                setUniform2f(prog, "uRadius", radiusX, radiusY)
+
+                val a = ((stamp.color ushr 24) and 0xFF) / 255f * stamp.opacity
+                val r = ((stamp.color ushr 16) and 0xFF) / 255f * a
+                val g = ((stamp.color ushr 8) and 0xFF) / 255f * a
+                val b = (stamp.color and 0xFF) / 255f * a
+
+                val colorLoc = GLES30.glGetUniformLocation(prog, "uColor")
+                GLES30.glUniform4f(colorLoc, r, g, b, a)
+
+                GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4)
+            }
+
+            GLES30.glDisableVertexAttribArray(posLoc)
+            GLES30.glDisable(GLES30.GL_BLEND)
+            GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
+
+            startFrameLoop()
+        }
+    }
+
     override fun flatten(width: Int, height: Int): ByteBuffer {
         val buffer = ByteBuffer.allocateDirect(width * height * 4).order(ByteOrder.nativeOrder())
         val latch = CountDownLatch(1)
@@ -195,6 +255,8 @@ class GlCompositor @Inject constructor() : Compositor {
             textures.release()
             if (displayProgram != 0) GLES30.glDeleteProgram(displayProgram)
             displayProgram = 0
+            if (stampProgram != 0) GLES30.glDeleteProgram(stampProgram)
+            stampProgram = 0
             blendPrograms.values.forEach { GLES30.glDeleteProgram(it) }
             blendPrograms.clear()
             quadBuffer = null
@@ -515,6 +577,31 @@ void main() {
 
     vec3 blended = mix(checkerColor, layer.rgb, layer.a);
     outColor = vec4(blended, 1.0);
+}"""
+
+        private const val STAMP_VERTEX = """#version 300 es
+layout(location = 0) in vec2 aPos;
+uniform vec2 uCenter;
+uniform vec2 uRadius;
+out vec2 vLocalPos;
+
+void main() {
+    vLocalPos = aPos;
+    vec2 pos = uCenter + aPos * uRadius;
+    gl_Position = vec4(pos, 0.0, 1.0);
+}"""
+
+        private const val STAMP_FRAGMENT = """#version 300 es
+precision mediump float;
+in vec2 vLocalPos;
+uniform vec4 uColor;
+out vec4 outColor;
+
+void main() {
+    float dist = length(vLocalPos);
+    if (dist > 1.0) discard;
+    float alphaFalloff = smoothstep(1.0, 0.95, dist);
+    outColor = uColor * alphaFalloff;
 }"""
     }
 }

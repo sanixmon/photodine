@@ -43,7 +43,12 @@ interface Compositor {
      * surface-pixel coordinates of the canvas origin (top-left).
      */
     fun setViewTransform(zoom: Float, offsetX: Float, offsetY: Float)
+    fun addLayer(layer: Layer, index: Int? = null)
 
+    /**
+     * Renders a batch of brush or eraser stamps into the texture of [targetLayerId].
+     */
+    fun renderStamps(stamps: List<BrushStamp>, targetLayerId: UUID)
     /** Requests one immediate frame (also used to kick the vsync loop). */
     fun requestRender()
 
