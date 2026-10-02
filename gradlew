@@ -37,4 +37,17 @@ if [ -z "$GRADLE_BIN" ] || [ ! -x "$GRADLE_BIN" ]; then
     rm -f "$TMP_ZIP"
 fi
 
+if [ -z "$GRADLE_BIN" ] || [ ! -x "$GRADLE_BIN" ]; then
+    GRADLE_DIR_NAME="$(echo "$DIST_NAME" | sed 's/-bin$//;s/-all$//')"
+    GRADLE_BIN="$DIST_DIR/$GRADLE_DIR_NAME/bin/gradle"
+fi
+
+if [ ! -x "$GRADLE_BIN" ]; then
+    GRADLE_BIN="$(find "$DIST_DIR" -name gradle -type f -perm -111 2>/dev/null | head -n 1)"
+fi
+
+if [ ! -x "$GRADLE_BIN" ] && command -v gradle >/dev/null 2>&1; then
+    GRADLE_BIN="$(command -v gradle)"
+fi
+
 exec "$GRADLE_BIN" "$@"
