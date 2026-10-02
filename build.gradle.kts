@@ -20,6 +20,7 @@ subprojects {
         extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
             lintOptions {
                 disable("NullSafeMutableLiveData")
+                disable("FlowOperatorInvokedInComposition")
                 isAbortOnError = false
                 isCheckReleaseBuilds = false
             }

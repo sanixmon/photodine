@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.photodine.core.engine.CanvasSize
+import kotlinx.coroutines.launch
 
 /**
  * New-canvas flow: preset sizes plus custom WxH input in a bottom sheet.
