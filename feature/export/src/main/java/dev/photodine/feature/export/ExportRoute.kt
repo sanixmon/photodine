@@ -115,7 +115,11 @@ fun ExportBottomSheet(
                 Button(
                     onClick = { viewModel.onIntent(ExportIntent.Export(andShare = false)) },
                     enabled = !state.isExporting,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 8.dp,
+                        vertical = 6.dp
+                    )
                 ) {
                     if (state.isExporting) {
                         CircularProgressIndicator(
@@ -125,15 +129,29 @@ fun ExportBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
-                    Text("Save to Gallery")
+                    Text(
+                        text = "Save to Gallery",
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
                 }
 
                 OutlinedButton(
                     onClick = { viewModel.onIntent(ExportIntent.Export(andShare = true)) },
                     enabled = !state.isExporting,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 8.dp,
+                        vertical = 6.dp
+                    )
                 ) {
-                    Text("Share")
+                    Text(
+                        text = "Share",
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
                 }
             }
         }

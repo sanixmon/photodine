@@ -226,12 +226,24 @@ fun LayerRow(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (canMoveUp) {
-                        TextButton(onClick = onMoveUp) { Text("▲") }
+                        TextButton(
+                            onClick = onMoveUp,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)
+                        ) { Text("▲") }
                     }
                     if (canMoveDown) {
-                        TextButton(onClick = onMoveDown) { Text("▼") }
+                        TextButton(
+                            onClick = onMoveDown,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)
+                        ) { Text("▼") }
                     }
-                    TextButton(onClick = { showControls = !showControls }) {
+                    TextButton(
+                        onClick = { showControls = !showControls },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
+                    ) {
                         Text(if (showControls) "Hide" else "Edit")
                     }
                 }
@@ -264,12 +276,24 @@ fun LayerRow(
                     // Blend mode selector and layer actions
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box {
-                            OutlinedButton(onClick = { showBlendMenu = true }) {
-                                Text("Blend: ${layer.blendMode.name}")
+                        Box(modifier = Modifier.weight(1.2f)) {
+                            OutlinedButton(
+                                onClick = { showBlendMenu = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                    horizontal = 6.dp,
+                                    vertical = 4.dp
+                                )
+                            ) {
+                                Text(
+                                    text = layer.blendMode.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
                             }
                             DropdownMenu(
                                 expanded = showBlendMenu,
@@ -287,14 +311,37 @@ fun LayerRow(
                             }
                         }
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            OutlinedButton(onClick = onDuplicate) {
-                                Text("Duplicate")
-                            }
-                            if (canDelete) {
-                                OutlinedButton(onClick = onDelete) {
-                                    Text("Delete")
-                                }
+                        OutlinedButton(
+                            onClick = onDuplicate,
+                            modifier = Modifier.weight(1f),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = 4.dp,
+                                vertical = 4.dp
+                            )
+                        ) {
+                            Text(
+                                text = "Copy",
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
+
+                        if (canDelete) {
+                            OutlinedButton(
+                                onClick = onDelete,
+                                modifier = Modifier.weight(0.9f),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 4.dp
+                                )
+                            ) {
+                                Text(
+                                    text = "Del",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
                             }
                         }
                     }

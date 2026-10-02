@@ -79,11 +79,17 @@ fun ColorPickerBottomSheet(
                             .background(Color(state.argbColor))
                             .border(2.dp, Color.Gray, CircleShape)
                     )
-                    OutlinedButton(onClick = {
-                        viewModel.onIntent(ColorPickerIntent.ActivateEyedropper)
-                        onEyedropperClicked()
-                    }) {
-                        Text("🔍 Eyedropper")
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.onIntent(ColorPickerIntent.ActivateEyedropper)
+                            onEyedropperClicked()
+                        },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
+                    ) {
+                        Text("🔍 Eyedropper", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

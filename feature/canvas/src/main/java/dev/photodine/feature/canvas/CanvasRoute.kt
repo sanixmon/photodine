@@ -182,16 +182,20 @@ fun CanvasRoute(
             // Top-start: Undo and Redo
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier.align(Alignment.TopStart),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
             ) {
                 FilledTonalButton(
                     onClick = { onUndoClicked?.invoke() },
+                    modifier = Modifier.size(36.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                     shape = androidx.compose.foundation.shape.CircleShape
                 ) {
                     Text("↶")
                 }
                 FilledTonalButton(
                     onClick = { onRedoClicked?.invoke() },
+                    modifier = Modifier.size(36.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                     shape = androidx.compose.foundation.shape.CircleShape
                 ) {
                     Text("↷")
@@ -201,7 +205,7 @@ fun CanvasRoute(
             // Top-end: + Photo and Export
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier.align(Alignment.TopEnd),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
             ) {
                 if (isImporting) {
                     CircularProgressIndicator(
@@ -209,13 +213,33 @@ fun CanvasRoute(
                         color = MaterialTheme.colorScheme.primary
                     )
                 } else {
-                    FilledTonalButton(onClick = { layerImportLauncher.launch("image/*") }) {
-                        Text("+ Photo")
+                    FilledTonalButton(
+                        onClick = { layerImportLauncher.launch("image/*") },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
+                    ) {
+                        Text(
+                            text = "+ Photo",
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1
+                        )
                     }
                 }
 
-                FilledTonalButton(onClick = { onExportClicked?.invoke() }) {
-                    Text("Export")
+                FilledTonalButton(
+                    onClick = { onExportClicked?.invoke() },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 10.dp,
+                        vertical = 4.dp
+                    )
+                ) {
+                    Text(
+                        text = "Export",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    )
                 }
             }
         }

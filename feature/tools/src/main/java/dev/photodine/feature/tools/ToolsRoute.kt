@@ -70,7 +70,7 @@ fun ToolsPanel(
             // Main tool selection strip
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 ActiveTool.entries.forEach { tool ->
@@ -82,6 +82,11 @@ fun ToolsPanel(
                                 onIntent(ToolsIntent.ToggleOptions)
                             }
                         },
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 4.dp,
+                            vertical = 6.dp
+                        ),
                         shape = RoundedCornerShape(8.dp),
                         colors = if (isSelected) {
                             androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
@@ -92,7 +97,13 @@ fun ToolsPanel(
                             androidx.compose.material3.ButtonDefaults.filledTonalButtonColors()
                         }
                     ) {
-                        Text(tool.name)
+                        Text(
+                            text = tool.name.lowercase().replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
                     }
                 }
             }

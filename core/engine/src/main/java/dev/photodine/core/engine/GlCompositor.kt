@@ -662,7 +662,9 @@ uniform float uScale;
 uniform vec2 uOrigin;
 
 void main() {
-    vec2 screenPixel = (aPos * 0.5 + 0.5) * uSurfaceSize;
+    float screenX = (aPos.x * 0.5 + 0.5) * uSurfaceSize.x;
+    float screenY = (1.0 - (aPos.y * 0.5 + 0.5)) * uSurfaceSize.y;
+    vec2 screenPixel = vec2(screenX, screenY);
     vScreenPixel = screenPixel;
     vCanvasCoord = (screenPixel - uOrigin) / uScale;
     gl_Position = vec4(aPos, 0.0, 1.0);
@@ -684,7 +686,7 @@ void main() {
         outColor = vec4(0.12, 0.12, 0.12, 1.0);
         return;
     }
-    vec2 uv = vCanvasCoord / uCanvasSize;
+    vec2 uv = vec2(vCanvasCoord.x / uCanvasSize.x, 1.0 - (vCanvasCoord.y / uCanvasSize.y));
     vec4 layer = texture(uLayer, uv);
 
     vec2 checkerCoord = floor(vScreenPixel / uCheckerSize);
