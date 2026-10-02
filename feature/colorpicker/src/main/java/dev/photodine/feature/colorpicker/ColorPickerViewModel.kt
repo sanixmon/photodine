@@ -5,22 +5,16 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @HiltViewModel
 class ColorPickerViewModel @Inject constructor() : ViewModel() {
-    data class UiState(val ready: Boolean = false)
 
-    sealed interface ColorPickerIntent {
-        data object Refresh : ColorPickerIntent
-    }
-
-    private val _state = MutableStateFlow(UiState())
-    val state: StateFlow<UiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(ColorPickerState())
+    val state: StateFlow<ColorPickerState> = _state.asStateFlow()
 
     fun onIntent(intent: ColorPickerIntent) {
-        when (intent) {
-            ColorPickerIntent.Refresh -> _state.value = UiState(ready = true)
-        }
+        _state.update { ColorPickerReducer.reduce(it, intent) }
     }
 }

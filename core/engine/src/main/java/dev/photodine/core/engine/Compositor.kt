@@ -46,6 +46,10 @@ interface Compositor {
     fun addLayer(layer: Layer, index: Int? = null)
 
     /**
+     * One-shot read of a single composite pixel at ([x], [y]) in canvas coordinates.
+     * Used by the eyedropper tool. Returns 32-bit ARGB packed int.
+     */
+    fun readPixel(x: Int, y: Int): Int
     /**
      * Crops all layers and canvas dimensions to [cropRect].
      */

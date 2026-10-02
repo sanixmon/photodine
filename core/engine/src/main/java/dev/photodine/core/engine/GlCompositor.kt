@@ -332,6 +332,40 @@ class GlCompositor @Inject constructor() : Compositor {
         return buffer
     }
 
+    override fun readPixel(x: Int, y: Int): Int {
+        val latch = CountDownLatch(1)
+        var sampledColor = 0
+        glHandler.post {
+            try {
+                if (!textures.isInitialised) return@post
+                egl.makePbufferCurrent()
+                val compositedTex = compositeVisibleLayers()
+                val fbo = textures.attachToFbo(compositedTex)
+                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbo)
+
+                val flippedY = (canvasH - 1 - y).coerceIn(0, canvasH - 1)
+                val clampedX = x.coerceIn(0, canvasW - 1)
+
+                val pixelBuffer = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder())
+                GLES30.glReadPixels(clampedX, flippedY, 1, 1, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, pixelBuffer)
+                pixelBuffer.position(0)
+                val r = pixelBuffer.get().toInt() and 0xFF
+                val g = pixelBuffer.get().toInt() and 0xFF
+                val b = pixelBuffer.get().toInt() and 0xFF
+                val a = pixelBuffer.get().toInt() and 0xFF
+
+                sampledColor = (a shl 24) or (r shl 16) or (g shl 8) or b
+
+                GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
+                GLES30.glDeleteFramebuffers(1, intArrayOf(fbo), 0)
+            } finally {
+                latch.countDown()
+            }
+        }
+        latch.await(2, TimeUnit.SECONDS)
+        return sampledColor
+    }
+
     override fun release() {
         glHandler.post {
             surfaceAttached = false
