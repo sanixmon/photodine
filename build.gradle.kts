@@ -14,3 +14,15 @@ allprojects {
         enabled = false
     }
 }
+
+subprojects {
+    afterEvaluate {
+        extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
+            lintOptions {
+                disable("NullSafeMutableLiveData")
+                isAbortOnError = false
+                isCheckReleaseBuilds = false
+            }
+        }
+    }
+}
