@@ -1,6 +1,9 @@
 package dev.photodine.app.navigation
-
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -8,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.photodine.feature.canvas.CanvasRoute
 import dev.photodine.feature.canvas.NewCanvasRoute
+import dev.photodine.feature.layers.LayersRoute
 
 object PhotodineRoutes {
     const val NEW_CANVAS = "new-canvas"
@@ -37,10 +41,13 @@ fun PhotodineNavHost() {
                 navArgument("height") { type = NavType.IntType }
             )
         ) { backStackEntry ->
-            CanvasRoute(
-                width = backStackEntry.arguments?.getInt("width") ?: 1080,
-                height = backStackEntry.arguments?.getInt("height") ?: 1080
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                CanvasRoute(
+                    width = backStackEntry.arguments?.getInt("width") ?: 1080,
+                    height = backStackEntry.arguments?.getInt("height") ?: 1080
+                )
+                LayersRoute(modifier = Modifier.align(Alignment.BottomCenter))
+            }
         }
     }
 }
