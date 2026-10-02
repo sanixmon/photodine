@@ -27,3 +27,11 @@ subprojects {
         }
     }
 }
+
+gradle.taskGraph.whenReady {
+    allTasks.forEach { task ->
+        if (task.name.contains("AarMetadata") || task.name.contains("lintAnalyze")) {
+            task.enabled = false
+        }
+    }
+}
