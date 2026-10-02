@@ -16,6 +16,6 @@ Closes tickets:
 - #10 gallery-import
 - #11 export
 
-Status: DRAFT — tickets 01, 02, 03 merged. Frontier: [04].
+Status: DRAFT — tickets 01..04 merged. Frontier: [05, 08, 09, 10, 11].
 Merge strategy: ticket branches merge into photodine-v1 via merger subagents (ff or --no-ff, verify build).
 Final gate: code-review on photodine-v1, fix in single agent, then mark ready.
