@@ -56,6 +56,24 @@ class GlTextureStore : TextureStore {
         return texId
     }
 
+    override fun createLayerTextureFromBitmap(bitmap: android.graphics.Bitmap): Int {
+        check(isInitialised) { "GlTextureStore not initialised" }
+        val ids = IntArray(1)
+        GLES30.glGenTextures(1, ids, 0)
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, ids[0])
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE)
+        android.opengl.GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap, 0)
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0)
+
+        val fboId = attachToFbo(ids[0])
+        allocatedLayerTextures.add(ids[0])
+        textureFboMap[ids[0]] = fboId
+        return ids[0]
+    }
+
     fun getFramebufferForTexture(textureId: Int): Int {
         return textureFboMap.getOrPut(textureId) {
             attachToFbo(textureId)

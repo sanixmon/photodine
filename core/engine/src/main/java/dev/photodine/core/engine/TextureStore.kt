@@ -29,6 +29,9 @@ interface TextureStore {
     /** Allocates a new transparent RGBA8 layer texture of canvas dimensions and returns its GL handle. */
     fun createLayerTexture(): Int
 
+    /** Allocates an RGBA8 layer texture initialized with the pixels of [bitmap]. */
+    fun createLayerTextureFromBitmap(bitmap: android.graphics.Bitmap): Int
+
     /** Deletes the specified layer texture. */
     fun deleteLayerTexture(textureId: Int)
 

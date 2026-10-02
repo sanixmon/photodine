@@ -128,6 +128,31 @@ class GlCompositor @Inject constructor() : Compositor {
         requestRender()
     }
 
+    override fun addLayerFromBitmap(bitmap: android.graphics.Bitmap, name: String): Layer {
+        val latch = CountDownLatch(1)
+        var createdLayer: Layer? = null
+        glHandler.post {
+            try {
+                if (!textures.isInitialised) return@post
+                egl.makePbufferCurrent()
+                val texId = textures.createLayerTextureFromBitmap(bitmap)
+                val layer = Layer(
+                    name = name,
+                    textureId = texId
+                )
+                synchronized(layerLock) {
+                    layerList.add(layer)
+                }
+                createdLayer = layer
+            } finally {
+                latch.countDown()
+            }
+        }
+        latch.await(FLATTEN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        requestRender()
+        return createdLayer ?: Layer(textureId = 0, name = name)
+    }
+
     override fun removeLayer(id: UUID) {
         var removedTexId: Int? = null
         synchronized(layerLock) {

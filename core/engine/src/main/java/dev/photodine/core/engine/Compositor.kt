@@ -43,7 +43,12 @@ interface Compositor {
      * surface-pixel coordinates of the canvas origin (top-left).
      */
     fun setViewTransform(zoom: Float, offsetX: Float, offsetY: Float)
+    fun addLayer(layer: Layer, index: Int? = null)
 
+    /**
+     * Uploads [bitmap] to a new layer texture and inserts it as a Layer.
+     */
+    fun addLayerFromBitmap(bitmap: android.graphics.Bitmap, name: String = "Imported Photo"): Layer
     /** Requests one immediate frame (also used to kick the vsync loop). */
     fun requestRender()
 
