@@ -46,12 +46,20 @@ interface Compositor {
     fun addLayer(layer: Layer, index: Int? = null)
 
     /**
+    /**
      * Crops all layers and canvas dimensions to [cropRect].
      */
     fun cropCanvas(cropRect: CropRect)
+
+    /**
      * Uploads [bitmap] to a new layer texture and inserts it as a Layer.
      */
     fun addLayerFromBitmap(bitmap: android.graphics.Bitmap, name: String = "Imported Photo"): Layer
+
+    /**
+     * Renders a batch of brush or eraser stamps into the texture of [targetLayerId].
+     */
+    fun renderStamps(stamps: List<BrushStamp>, targetLayerId: java.util.UUID)
     /** Requests one immediate frame (also used to kick the vsync loop). */
     fun requestRender()
 
