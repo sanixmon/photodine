@@ -11,7 +11,7 @@ private const val TAG = "GlTextureStore"
  *
  * Allocates layer textures plus the ping-pong accumulator pair.
  */
-class GlTextureStore : TextureStore {
+internal class GlTextureStore : TextureStore {
     override val maxDimension: Int = CanvasSize.MAX_DIMENSION
 
     override var isInitialised: Boolean = false

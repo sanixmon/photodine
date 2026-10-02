@@ -7,16 +7,12 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.TextureView
 import dev.photodine.core.engine.Compositor
+import dev.photodine.feature.canvas.stroke.StrokePoint
 import kotlin.math.hypot
 
 /**
- * `TextureView` hosted in Compose via `AndroidView`.
- *
- * Responsibilities: forward the `SurfaceTexture` lifecycle to the [Compositor]
- * (surface attach/detach drives the GL frame loop) and translate touch into
- * [ViewTransform] updates — one-finger drag pans, two-finger pinch zooms
- * (clamped 0.1x-32x). The UI thread never calls GL directly; every
- * [Compositor] method posts to the engine render thread.
+ * [TextureView] hosting the engine surface. Handles pinch-to-zoom,
+ * pan gestures, and stylus/touch stroke capture for drawing tools.
  */
 class CanvasTextureView @JvmOverloads constructor(
     context: Context,
@@ -25,31 +21,35 @@ class CanvasTextureView @JvmOverloads constructor(
 ) : TextureView(context, attrs, defStyleAttr) {
 
     var compositor: Compositor? = null
-
-    /** Fires on every gesture-driven change; the host mirrors it into MVI state. */
     var onTransformChanged: ((ViewTransform) -> Unit)? = null
-
-    /** Fires when the GL surface is ready so MVI state can reflect engine readiness. */
     var onSurfaceAvailable: (() -> Unit)? = null
 
-    private var transform = ViewTransform()
+    var isDrawingTool: Boolean = true
+    var onStrokeBatch: ((List<StrokePoint>) -> Unit)? = null
+    var onStrokeEnd: (() -> Unit)? = null
+    var onCanvasTapped: ((canvasX: Float, canvasY: Float) -> Unit)? = null
 
-    private var panPointerId = INVALID_POINTER
-    private var lastX = 0f
-    private var lastY = 0f
-    private var lastPinchDistance = 0f
+    private var transform: ViewTransform = ViewTransform()
+    private var panPointerId: Int = INVALID_POINTER
+    private var lastX: Float = 0f
+    private var lastY: Float = 0f
+    private var lastPinchDistance: Float = 0f
+
+    private var strokeActive = false
+    private var downX = 0f
+    private var downY = 0f
 
     init {
         isOpaque = false
         surfaceTextureListener = object : SurfaceTextureListener {
-            override fun onSurfaceTextureAvailable(surface: SurfaceTexture, w: Int, h: Int) {
-                compositor?.attachSurface(surface, w, h)
+            override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+                compositor?.attachSurface(surface, width, height)
                 pushTransform()
                 onSurfaceAvailable?.invoke()
             }
 
-            override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, w: Int, h: Int) {
-                compositor?.updateSurfaceSize(w, h)
+            override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
+                compositor?.updateSurfaceSize(width, height)
             }
 
             override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
@@ -61,10 +61,6 @@ class CanvasTextureView @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Applies a transform coming from MVI state without re-emitting it.
-     * Used so external state changes (e.g. reset) reach the GL thread.
-     */
     fun updateTransform(next: ViewTransform) {
         transform = next
         pushTransform()
@@ -82,52 +78,78 @@ class CanvasTextureView @JvmOverloads constructor(
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.pointerCount >= 2) {
+            // Two-finger gesture: pan or pinch-zoom
+            if (strokeActive) {
+                strokeActive = false
+                onStrokeEnd?.invoke()
+            }
+            handleTwoFingerGesture(event)
+            return true
+        }
+
+        // Single-finger: drawing or pan/tap
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                downX = event.x
+                downY = event.y
                 panPointerId = event.getPointerId(0)
                 lastX = event.x
                 lastY = event.y
-                lastPinchDistance = 0f
-            }
 
-            MotionEvent.ACTION_POINTER_DOWN -> {
-                if (event.pointerCount == 2) {
-                    lastPinchDistance = pinchDistance(event)
-                    panPointerId = INVALID_POINTER
+                if (isDrawingTool && onStrokeBatch != null) {
+                    strokeActive = true
+                    val pt = toCanvasPoint(event.x, event.y, event.getAxisValue(MotionEvent.AXIS_PRESSURE))
+                    onStrokeBatch?.invoke(listOf(pt))
                 }
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (event.pointerCount >= 2) {
-                    handlePinch(event)
-                } else {
+                if (strokeActive && onStrokeBatch != null) {
+                    val batch = mutableListOf<StrokePoint>()
+                    val hist = event.historySize
+                    for (h in 0 until hist) {
+                        val hx = event.getHistoricalX(h)
+                        val hy = event.getHistoricalY(h)
+                        val hp = event.getHistoricalAxisValue(MotionEvent.AXIS_PRESSURE, h)
+                        batch.add(toCanvasPoint(hx, hy, hp))
+                    }
+                    val cp = event.getAxisValue(MotionEvent.AXIS_PRESSURE)
+                    batch.add(toCanvasPoint(event.x, event.y, cp))
+                    onStrokeBatch?.invoke(batch)
+                } else if (!isDrawingTool) {
                     handlePan(event)
                 }
             }
 
-            MotionEvent.ACTION_POINTER_UP -> {
-                // Remaining finger becomes the pan pointer to avoid a jump.
-                val leaving = event.getPointerId(event.actionIndex)
-                if (leaving == panPointerId || event.pointerCount - 1 < 2) {
-                    val remaining = (0 until event.pointerCount)
-                        .firstOrNull { event.getPointerId(it) != leaving }
-                    if (remaining != null) {
-                        panPointerId = event.getPointerId(remaining)
-                        lastX = event.getX(remaining)
-                        lastY = event.getY(remaining)
-                    } else {
-                        panPointerId = INVALID_POINTER
-                    }
+            MotionEvent.ACTION_UP -> {
+                if (strokeActive) {
+                    strokeActive = false
+                    onStrokeEnd?.invoke()
                 }
-                lastPinchDistance = 0f
+                val dist = hypot(event.x - downX, event.y - downY)
+                if (dist < 10f) {
+                    val canvasPt = toCanvasPoint(event.x, event.y, 1f)
+                    onCanvasTapped?.invoke(canvasPt.x, canvasPt.y)
+                }
+                panPointerId = INVALID_POINTER
             }
 
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+            MotionEvent.ACTION_CANCEL -> {
+                if (strokeActive) {
+                    strokeActive = false
+                    onStrokeEnd?.invoke()
+                }
                 panPointerId = INVALID_POINTER
-                lastPinchDistance = 0f
             }
         }
         return true
+    }
+
+    private fun toCanvasPoint(screenX: Float, screenY: Float, pressure: Float): StrokePoint {
+        val cx = (screenX - transform.offsetX) / transform.zoom
+        val cy = (screenY - transform.offsetY) / transform.zoom
+        return StrokePoint(cx, cy, pressure)
     }
 
     private fun handlePan(event: MotionEvent) {
@@ -140,25 +162,53 @@ class CanvasTextureView @JvmOverloads constructor(
         if (dx != 0f || dy != 0f) emit(transform.withPan(dx, dy))
     }
 
-    private fun handlePinch(event: MotionEvent) {
-        val distance = pinchDistance(event)
-        if (lastPinchDistance > 0f && distance > 0f) {
-            val focusX = (event.getX(0) + event.getX(1)) / 2f
-            val focusY = (event.getY(0) + event.getY(1)) / 2f
-            emit(transform.withZoom(distance / lastPinchDistance, focusX, focusY))
+    private fun handleTwoFingerGesture(event: MotionEvent) {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                if (event.pointerCount == 2) {
+                    lastPinchDistance = pinchDistance(event)
+                    lastX = (event.getX(0) + event.getX(1)) / 2f
+                    lastY = (event.getY(0) + event.getY(1)) / 2f
+                }
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                if (event.pointerCount >= 2) {
+                    val distance = pinchDistance(event)
+                    val midX = (event.getX(0) + event.getX(1)) / 2f
+                    val midY = (event.getY(0) + event.getY(1)) / 2f
+
+                    var current = transform
+                    if (lastPinchDistance > 0f && distance > 0f) {
+                        val factor = distance / lastPinchDistance
+                        current = current.withZoom(factor, midX, midY)
+                    }
+
+                    val dx = midX - lastX
+                    val dy = midY - lastY
+                    current = current.withPan(dx, dy)
+
+                    lastPinchDistance = distance
+                    lastX = midX
+                    lastY = midY
+                    emit(current)
+                }
+            }
+
+            MotionEvent.ACTION_POINTER_UP -> {
+                lastPinchDistance = 0f
+            }
         }
-        lastPinchDistance = distance
     }
 
     private fun pinchDistance(event: MotionEvent): Float {
         if (event.pointerCount < 2) return 0f
-        return hypot(
-            (event.getX(0) - event.getX(1)).toDouble(),
-            (event.getY(0) - event.getY(1)).toDouble()
-        ).toFloat()
+        val dx = event.getX(0) - event.getX(1)
+        val dy = event.getY(0) - event.getY(1)
+        return hypot(dx, dy)
     }
 
-    private companion object {
-        const val INVALID_POINTER = -1
+    companion object {
+        private const val INVALID_POINTER = -1
     }
 }

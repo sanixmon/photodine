@@ -27,17 +27,36 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.photodine.core.engine.CropRect
+import dev.photodine.core.engine.LayerTransform
+import dev.photodine.feature.canvas.stroke.CatmullRomSpline
+import dev.photodine.feature.canvas.stroke.StrokePoint
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 /**
  * Canvas screen: [CanvasTextureView] rendering the engine composite.
  * Gestures update MVI state; the view forwards every transform to the
- * compositor on the GL thread.
+ * compositor on the GL thread. Supports drawing strokes, move overlays, and crop.
  */
 @Composable
 fun CanvasRoute(
     width: Int,
     height: Int,
+    activeToolName: String = "BRUSH",
+    brushSize: Float = 20f,
+    brushOpacity: Float = 1f,
+    brushColor: Int = 0xFF000000.toInt(),
+    eraserSize: Float = 30f,
+    activeLayerId: UUID? = null,
+    activeLayerTransform: LayerTransform? = null,
+    onCanvasTapped: ((x: Float, y: Float) -> Unit)? = null,
+    onConfirmCrop: ((CropRect) -> Unit)? = null,
+    onCancelCrop: (() -> Unit)? = null,
+    onUndoClicked: (() -> Unit)? = null,
+    onRedoClicked: (() -> Unit)? = null,
+    onExportClicked: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
     viewModel: CanvasViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -64,8 +83,12 @@ fun CanvasRoute(
         viewModel.onIntent(CanvasViewModel.CanvasIntent.InitCanvas(width, height))
     }
 
+    val isDrawing = activeToolName == "BRUSH" || activeToolName == "ERASER"
+    val isEraser = activeToolName == "ERASER"
+    val strokeSize = if (isEraser) eraserSize else brushSize
+
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF1E1E1E))
     ) {
@@ -73,6 +96,7 @@ fun CanvasRoute(
             factory = { ctx ->
                 CanvasTextureView(ctx).apply {
                     compositor = viewModel.compositor
+                    isDrawingTool = isDrawing
                     onTransformChanged = { transform ->
                         viewModel.onIntent(
                             CanvasViewModel.CanvasIntent.TransformChanged(transform)
@@ -81,54 +105,117 @@ fun CanvasRoute(
                     onSurfaceAvailable = {
                         viewModel.onIntent(CanvasViewModel.CanvasIntent.SurfaceActive)
                     }
+                    onStrokeBatch = { batch ->
+                        val targetId = activeLayerId ?: viewModel.compositor.layers.firstOrNull()?.id
+                        if (targetId != null) {
+                            val stamps = CatmullRomSpline.generateStamps(
+                                points = batch,
+                                baseSize = strokeSize,
+                                opacity = brushOpacity,
+                                color = brushColor,
+                                isEraser = isEraser
+                            )
+                            viewModel.compositor.renderStamps(stamps, targetId)
+                        }
+                    }
+                    this.onCanvasTapped = onCanvasTapped
                 }
             },
             update = { view ->
                 view.updateTransform(state.transform)
+                view.isDrawingTool = isDrawing
+                view.onCanvasTapped = onCanvasTapped
+                view.onStrokeBatch = { batch ->
+                    val targetId = activeLayerId ?: viewModel.compositor.layers.firstOrNull()?.id
+                    if (targetId != null) {
+                        val stamps = CatmullRomSpline.generateStamps(
+                            points = batch,
+                            baseSize = strokeSize,
+                            opacity = brushOpacity,
+                            color = brushColor,
+                            isEraser = isEraser
+                        )
+                        viewModel.compositor.renderStamps(stamps, targetId)
+                    }
+                }
             },
             modifier = Modifier.fillMaxSize(),
             onRelease = { view ->
                 view.compositor = null
                 view.onTransformChanged = null
                 view.onSurfaceAvailable = null
+                view.onStrokeBatch = null
+                view.onCanvasTapped = null
             }
         )
 
-        // Top-start action: Undo & Redo buttons
-        androidx.compose.foundation.layout.Row(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
-        ) {
-            FilledTonalButton(
-                onClick = { /* undo */ },
-                shape = androidx.compose.foundation.shape.CircleShape
-            ) {
-                Text("↶")
-            }
-            FilledTonalButton(
-                onClick = { /* redo */ },
-                shape = androidx.compose.foundation.shape.CircleShape
-            ) {
-                Text("↷")
-            }
+        // Move Transform Overlay when activeTool == MOVE
+        if (activeToolName == "MOVE" && activeLayerTransform != null) {
+            MoveTransformOverlay(
+                canvasWidth = width,
+                canvasHeight = height,
+                layerTransform = activeLayerTransform,
+                viewTransform = state.transform
+            )
         }
 
-        // Top-right action: Import Photo layer
+        // Crop Overlay when activeTool == CROP
+        if (activeToolName == "CROP") {
+            CropOverlay(
+                canvasWidth = width,
+                canvasHeight = height,
+                viewTransform = state.transform,
+                onConfirmCrop = { rect ->
+                    viewModel.compositor.cropCanvas(rect)
+                    onConfirmCrop?.invoke(rect)
+                },
+                onCancelCrop = { onCancelCrop?.invoke() }
+            )
+        }
+
+        // Top toolbar overlay: Undo, Redo, + Photo, Export
         Box(
             modifier = Modifier
-                .align(Alignment.TopEnd)
+                .fillMaxSize()
                 .padding(16.dp)
         ) {
-            if (isImporting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            } else {
-                FilledTonalButton(onClick = { layerImportLauncher.launch("image/*") }) {
-                    Text("+ Photo")
+            // Top-start: Undo and Redo
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.align(Alignment.TopStart),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+            ) {
+                FilledTonalButton(
+                    onClick = { onUndoClicked?.invoke() },
+                    shape = androidx.compose.foundation.shape.CircleShape
+                ) {
+                    Text("↶")
+                }
+                FilledTonalButton(
+                    onClick = { onRedoClicked?.invoke() },
+                    shape = androidx.compose.foundation.shape.CircleShape
+                ) {
+                    Text("↷")
+                }
+            }
+
+            // Top-end: + Photo and Export
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.align(Alignment.TopEnd),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+            ) {
+                if (isImporting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    FilledTonalButton(onClick = { layerImportLauncher.launch("image/*") }) {
+                        Text("+ Photo")
+                    }
+                }
+
+                FilledTonalButton(onClick = { onExportClicked?.invoke() }) {
+                    Text("Export")
                 }
             }
         }

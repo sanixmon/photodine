@@ -52,11 +52,11 @@ class ExportViewModel @Inject constructor(
     val effects: SharedFlow<ExportEffect> = _effects.asSharedFlow()
 
     fun onIntent(intent: ExportIntent) {
-        when (intent) {
-            is ExportIntent.SetFormat -> _state.update { it.copy(format = intent.format) }
-            is ExportIntent.SetQuality -> _state.update { it.copy(jpegQuality = intent.quality.coerceIn(10, 100)) }
-            is ExportIntent.Export -> executeExport(intent.andShare)
-            ExportIntent.DismissMessage -> _state.update { it.copy(exportSuccessUri = null, errorMessage = null) }
+        val newState = ExportReducer.reduce(_state.value, intent)
+        _state.value = newState
+
+        if (intent is ExportIntent.Export) {
+            executeExport(intent.andShare)
         }
     }
 

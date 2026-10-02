@@ -178,7 +178,8 @@ fun ToolsPanel(
 
                             ActiveTool.MOVE -> {
                                 Text(
-                                    text = "Move mode: 1-finger drag to translate, 2-finger pinch to scale, 2-finger twist to rotate.",
+                                    text = "Move mode: 1-finger drag to translate, 2-finger pinch to scale, " +
+                                        "2-finger twist to rotate.",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }

@@ -43,7 +43,6 @@ interface Compositor {
      * surface-pixel coordinates of the canvas origin (top-left).
      */
     fun setViewTransform(zoom: Float, offsetX: Float, offsetY: Float)
-    fun addLayer(layer: Layer, index: Int? = null)
 
     /**
      * One-shot read of a single composite pixel at ([x], [y]) in canvas coordinates.

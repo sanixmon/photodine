@@ -35,21 +35,18 @@ class CanvasViewModel @Inject constructor(
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     fun onIntent(intent: CanvasIntent) {
+        val newState = CanvasReducer.reduce(_state.value, intent, compositor.isReady())
+        _state.value = newState
+
         when (intent) {
             is CanvasIntent.InitCanvas -> {
-                if (!CanvasSize.isValid(intent.width, intent.height)) return
-                compositor.initialiseCanvas(intent.width, intent.height)
-                _state.update {
-                    it.copy(canvasSize = CanvasSize(intent.width, intent.height))
+                if (CanvasSize.isValid(intent.width, intent.height)) {
+                    compositor.initialiseCanvas(intent.width, intent.height)
                 }
             }
-
-            is CanvasIntent.TransformChanged -> {
-                _state.update { it.copy(transform = intent.transform) }
-            }
-
+            is CanvasIntent.TransformChanged,
             CanvasIntent.SurfaceActive -> {
-                _state.update { it.copy(engineReady = compositor.isReady()) }
+                // State reduced
             }
         }
     }
