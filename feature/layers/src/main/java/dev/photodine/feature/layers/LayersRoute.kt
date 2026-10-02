@@ -88,14 +88,28 @@ fun LayersPanel(
             ) {
                 TextButton(onClick = { onIntent(LayerIntent.ToggleExpanded) }) {
                     Text(
-                        text = if (state.isExpanded) "Layers ▲" else "Layers ▼ (${state.layers.size})",
-                        style = MaterialTheme.typography.titleMedium
+                        text = "⧉ Layers (${state.layers.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    FilledTonalButton(onClick = { onIntent(LayerIntent.AddLayer()) }) {
-                        Text("+ Add Layer")
+                    FilledTonalButton(
+                        onClick = { onIntent(LayerIntent.AddLayer()) },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
+                    ) {
+                        Text("+ Layer", style = MaterialTheme.typography.labelSmall)
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    TextButton(
+                        onClick = { onIntent(LayerIntent.ToggleExpanded) },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)
+                    ) {
+                        Text("✕", style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }
