@@ -43,7 +43,12 @@ interface Compositor {
      * surface-pixel coordinates of the canvas origin (top-left).
      */
     fun setViewTransform(zoom: Float, offsetX: Float, offsetY: Float)
+    fun addLayer(layer: Layer, index: Int? = null)
 
+    /**
+     * Crops all layers and canvas dimensions to [cropRect].
+     */
+    fun cropCanvas(cropRect: CropRect)
     /** Requests one immediate frame (also used to kick the vsync loop). */
     fun requestRender()
 

@@ -163,6 +163,66 @@ class GlCompositor @Inject constructor() : Compositor {
         requestRender()
     }
 
+    override fun cropCanvas(cropRect: CropRect) {
+        glHandler.post {
+            if (!textures.isInitialised) return@post
+            val newW = cropRect.width
+            val newH = cropRect.height
+            val oldW = canvasW
+            val oldH = canvasH
+
+            egl.makePbufferCurrent()
+
+            // Crop each layer texture
+            synchronized(layerLock) {
+                val updated = layerList.map { layer ->
+                    val newTex = createCroppedTexture(layer.textureId, oldW, oldH, cropRect)
+                    textures.deleteLayerTexture(layer.textureId)
+                    layer.copy(textureId = newTex)
+                }
+                layerList.clear()
+                layerList.addAll(updated)
+            }
+
+            // Reallocate accumulators
+            textures.initialise(newW, newH)
+            canvasW = newW
+            canvasH = newH
+
+            // Recenter view
+            zoom = 1f
+            offsetX = 0f
+            offsetY = 0f
+
+            startFrameLoop()
+        }
+    }
+
+    private fun createCroppedTexture(oldTex: Int, oldW: Int, oldH: Int, cropRect: CropRect): Int {
+        val newW = cropRect.width
+        val newH = cropRect.height
+        val newTex = textures.createLayerTexture()
+
+        val readFbo = textures.attachToFbo(oldTex)
+        val drawFbo = textures.attachToFbo(newTex)
+
+        GLES30.glBindFramebuffer(GLES30.GL_READ_FRAMEBUFFER, readFbo)
+        GLES30.glBindFramebuffer(GLES30.GL_DRAW_FRAMEBUFFER, drawFbo)
+
+        val srcY0 = oldH - cropRect.bottom
+        val srcY1 = oldH - cropRect.top
+
+        GLES30.glBlitFramebuffer(
+            cropRect.left, srcY0, cropRect.right, srcY1,
+            0, 0, newW, newH,
+            GLES30.GL_COLOR_BUFFER_BIT, GLES30.GL_NEAREST
+        )
+
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
+        GLES30.glDeleteFramebuffers(2, intArrayOf(readFbo, drawFbo), 0)
+        return newTex
+    }
+
     override fun flatten(width: Int, height: Int): ByteBuffer {
         val buffer = ByteBuffer.allocateDirect(width * height * 4).order(ByteOrder.nativeOrder())
         val latch = CountDownLatch(1)
