@@ -55,45 +55,49 @@ object LayerReducer {
             }
 
             is LayerIntent.DeleteLayer -> {
-                // Must keep at least one layer
-                if (state.layers.size <= 1) return state
                 val idx = state.layers.indexOfFirst { it.id == intent.id }
-                if (idx == -1) return state
-
-                val newLayers = state.layers.toMutableList().apply { removeAt(idx) }
-                val newActiveId = if (state.activeLayerId == intent.id) {
-                    val nextIdx = idx.coerceAtMost(newLayers.size - 1)
-                    newLayers[nextIdx].id
+                if (state.layers.size <= 1 || idx == -1) {
+                    state
                 } else {
-                    state.activeLayerId
+                    val newLayers = state.layers.toMutableList().apply { removeAt(idx) }
+                    val newActiveId = if (state.activeLayerId == intent.id) {
+                        val nextIdx = idx.coerceAtMost(newLayers.size - 1)
+                        newLayers[nextIdx].id
+                    } else {
+                        state.activeLayerId
+                    }
+                    state.copy(layers = newLayers, activeLayerId = newActiveId)
                 }
-                state.copy(layers = newLayers, activeLayerId = newActiveId)
             }
 
             is LayerIntent.DuplicateLayer -> {
                 val idx = state.layers.indexOfFirst { it.id == intent.id }
-                if (idx == -1) return state
-                val source = state.layers[idx]
-                val duplicate = source.copy(
-                    id = UUID.randomUUID(),
-                    name = "${source.name} copy",
-                    textureId = nextTextureId()
-                )
-                val newLayers = state.layers.toMutableList().apply {
-                    add(idx + 1, duplicate)
+                if (idx == -1) {
+                    state
+                } else {
+                    val source = state.layers[idx]
+                    val duplicate = source.copy(
+                        id = UUID.randomUUID(),
+                        name = "${source.name} copy",
+                        textureId = nextTextureId()
+                    )
+                    val newLayers = state.layers.toMutableList().apply {
+                        add(idx + 1, duplicate)
+                    }
+                    state.copy(layers = newLayers, activeLayerId = duplicate.id)
                 }
-                state.copy(layers = newLayers, activeLayerId = duplicate.id)
             }
 
             is LayerIntent.ReorderLayer -> {
-                if (intent.fromIndex !in state.layers.indices || intent.toIndex !in state.layers.indices) {
-                    return state
+                val validIndices = intent.fromIndex in state.layers.indices && intent.toIndex in state.layers.indices
+                if (!validIndices || intent.fromIndex == intent.toIndex) {
+                    state
+                } else {
+                    val newLayers = state.layers.toMutableList()
+                    val moved = newLayers.removeAt(intent.fromIndex)
+                    newLayers.add(intent.toIndex, moved)
+                    state.copy(layers = newLayers)
                 }
-                if (intent.fromIndex == intent.toIndex) return state
-                val newLayers = state.layers.toMutableList()
-                val moved = newLayers.removeAt(intent.fromIndex)
-                newLayers.add(intent.toIndex, moved)
-                state.copy(layers = newLayers)
             }
 
             is LayerIntent.SetVisibility -> {
