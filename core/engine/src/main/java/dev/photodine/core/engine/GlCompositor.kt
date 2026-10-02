@@ -485,9 +485,6 @@ class GlCompositor @Inject constructor() : Compositor {
      * Returns the GL texture ID holding the final composited result.
      */
     private fun compositeVisibleLayers(): Int {
-        val visibleLayers = synchronized(layerLock) {
-            layerList.filter { it.visible }
-        }
         val fbos = textures.framebufferIds
         val accumTexs = textures.accumulatorTextureIds
         if (fbos.size < 2 || accumTexs.size < 2) return 0
@@ -495,15 +492,16 @@ class GlCompositor @Inject constructor() : Compositor {
         // Clear accum 0 to transparent
         textures.clearFbo(fbos[0], canvasW, canvasH)
 
-        if (visibleLayers.isEmpty()) {
+        val visibleLayers = synchronized(layerLock) {
+            layerList.filter { it.visible }
+        }
+        val quad = quadBuffer
+        if (visibleLayers.isEmpty() || quad == null) {
             return accumTexs[0]
         }
 
         var readIdx = 0
         var writeIdx = 1
-
-        val quad = quadBuffer ?: return accumTexs[0]
-
         for (layer in visibleLayers) {
             val prog = blendPrograms[layer.blendMode] ?: continue
             val targetFbo = fbos[writeIdx]

@@ -9,10 +9,9 @@ private const val TAG = "GlUtils"
 internal object GlUtils {
     fun createProgram(vertexSource: String, fragmentSource: String): Int {
         val vertex = compileShader(GLES30.GL_VERTEX_SHADER, vertexSource)
-        if (vertex == 0) return 0
-        val fragment = compileShader(GLES30.GL_FRAGMENT_SHADER, fragmentSource)
-        if (fragment == 0) {
-            GLES30.glDeleteShader(vertex)
+        val fragment = if (vertex != 0) compileShader(GLES30.GL_FRAGMENT_SHADER, fragmentSource) else 0
+        if (vertex == 0 || fragment == 0) {
+            if (vertex != 0) GLES30.glDeleteShader(vertex)
             return 0
         }
         val program = GLES30.glCreateProgram()
@@ -23,12 +22,13 @@ internal object GlUtils {
         GLES30.glGetProgramiv(program, GLES30.GL_LINK_STATUS, status, 0)
         GLES30.glDeleteShader(vertex)
         GLES30.glDeleteShader(fragment)
-        if (status[0] != GLES30.GL_TRUE) {
+        return if (status[0] == GLES30.GL_TRUE) {
+            program
+        } else {
             Log.w(TAG, "program link failed: ${GLES30.glGetProgramInfoLog(program)}")
             GLES30.glDeleteProgram(program)
-            return 0
+            0
         }
-        return program
     }
 
     private fun compileShader(type: Int, source: String): Int {
