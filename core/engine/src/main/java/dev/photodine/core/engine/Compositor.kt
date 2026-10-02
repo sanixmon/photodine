@@ -49,6 +49,9 @@ interface Compositor {
      * Crops all layers and canvas dimensions to [cropRect].
      */
     fun cropCanvas(cropRect: CropRect)
+     * Uploads [bitmap] to a new layer texture and inserts it as a Layer.
+     */
+    fun addLayerFromBitmap(bitmap: android.graphics.Bitmap, name: String = "Imported Photo"): Layer
     /** Requests one immediate frame (also used to kick the vsync loop). */
     fun requestRender()
 

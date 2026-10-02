@@ -37,6 +37,20 @@ fun NewCanvasRoute(
     viewModel: NewCanvasViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val galleryLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            coroutineScope.launch {
+                val bitmap = ImageImporter.decodeBitmap(context, uri)
+                if (bitmap != null) {
+                    onCanvasCreated(bitmap.width, bitmap.height)
+                }
+            }
+        }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
@@ -58,6 +72,13 @@ fun NewCanvasRoute(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("New canvas", style = MaterialTheme.typography.headlineSmall)
+
+            androidx.compose.material3.OutlinedButton(
+                onClick = { galleryLauncher.launch("image/*") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Open from Gallery")
+            }
 
             Text("Presets", style = MaterialTheme.typography.labelLarge)
             CanvasSize.PRESETS.forEach { preset ->
