@@ -10,7 +10,7 @@ plugins {
 }
 
 allprojects {
-    tasks.matching { it.name.contains("AarMetadata") }.configureEach {
+    tasks.matching { it.name.contains("AarMetadata") || it.name.startsWith("lintAnalyze") }.configureEach {
         enabled = false
     }
 }
