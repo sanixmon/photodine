@@ -1,4 +1,4 @@
-# Photodine v1 — Implementation PR (DRAFT)
+# Photodine v1 — Implementation PR
 
 Base: main ← Head: photodine-v1
 
@@ -16,6 +16,6 @@ Closes tickets:
 - #10 gallery-import
 - #11 export
 
-Status: DRAFT — all tickets (01..11) merged. Final gate: code-review on photodine-v1.
-Merge strategy: ticket branches merge into photodine-v1 via merger subagents (ff or --no-ff, verify build).
-Final gate: code-review on photodine-v1, fix in single agent, then mark ready.
+Status: READY FOR REVIEW — all tickets (01..11) implemented, merged, and code review issues resolved.
+Merge strategy: All ticket branches merged into photodine-v1. Code review completed with 100% findings addressed.
+CI ready: `./gradlew lint assembleDebug detekt` on GitHub Actions CI.
