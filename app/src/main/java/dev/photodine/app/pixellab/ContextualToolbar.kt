@@ -25,7 +25,7 @@ import androidx.compose.material.icons.filled.InvertColors
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.ThreeDRotation
+import androidx.compose.material.icons.filled.ThreedRotation
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -164,7 +164,7 @@ fun ContextualToolbar(
 
                     EditorTab.Effects -> {
                         item { ToolbarItem(Icons.Default.AutoFixHigh, "vignette") {} }
-                        item { ToolbarItem(Icons.Default.ThreeDRotation, "3D rotate") {} }
+                        item { ToolbarItem(Icons.Default.ThreedRotation, "3D rotate") {} }
                         item { ToolbarItem(Icons.Default.Opacity, "shadow") {} }
                     }
                 }
