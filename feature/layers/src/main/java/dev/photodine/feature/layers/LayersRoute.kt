@@ -26,6 +26,13 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -87,11 +94,22 @@ fun LayersPanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = { onIntent(LayerIntent.ToggleExpanded) }) {
-                    Text(
-                        text = "⧉ Layers (${state.layers.size})",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Layers,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Layers (${state.layers.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -105,11 +123,11 @@ fun LayersPanel(
                         Text("+ Layer", style = MaterialTheme.typography.labelSmall)
                     }
                     Spacer(modifier = Modifier.width(6.dp))
-                    TextButton(
-                        onClick = { onIntent(LayerIntent.ToggleExpanded) },
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)
-                    ) {
-                        Text("✕", style = MaterialTheme.typography.titleMedium)
+                    IconButton(onClick = { onIntent(LayerIntent.ToggleExpanded) }) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Collapse panel"
+                        )
                     }
                 }
             }
@@ -206,8 +224,15 @@ fun LayerRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Visibility toggle icon
-                    TextButton(onClick = onToggleVisibility) {
-                        Text(if (layer.visible) "👁" else "👁‍🗨")
+                    IconButton(onClick = onToggleVisibility) {
+                        Icon(
+                            imageVector = if (layer.visible) {
+                                Icons.Filled.Visibility
+                            } else {
+                                Icons.Filled.VisibilityOff
+                            },
+                            contentDescription = if (layer.visible) "Hide layer" else "Show layer"
+                        )
                     }
 
                     // Thumbnail placeholder
@@ -240,16 +265,20 @@ fun LayerRow(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (canMoveUp) {
-                        TextButton(
-                            onClick = onMoveUp,
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)
-                        ) { Text("▲") }
+                        IconButton(onClick = onMoveUp) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowUpward,
+                                contentDescription = "Move layer up"
+                            )
+                        }
                     }
                     if (canMoveDown) {
-                        TextButton(
-                            onClick = onMoveDown,
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)
-                        ) { Text("▼") }
+                        IconButton(onClick = onMoveDown) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowDownward,
+                                contentDescription = "Move layer down"
+                            )
+                        }
                     }
                     TextButton(
                         onClick = { showControls = !showControls },

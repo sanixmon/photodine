@@ -41,6 +41,17 @@ class LayersViewModel @Inject constructor(
                 compositor.removeLayer(intent.id)
             }
 
+            is LayerIntent.AddPhotoLayer -> {
+                // The engine already appended the uploaded bitmap layer at the end
+                // via addLayerFromBitmap; move it above the previously active layer
+                // so the compositor order matches the reduced UI state.
+                val targetIdx = newState.layers.indexOfFirst { it.id == newState.activeLayerId }
+                val fromIndex = compositor.layers.indexOfFirst { it.id == intent.layer.id }
+                if (fromIndex != -1 && targetIdx != -1 && fromIndex != targetIdx) {
+                    compositor.reorderLayers(fromIndex, targetIdx)
+                }
+            }
+
             is LayerIntent.DuplicateLayer -> {
                 val dup = newState.activeLayer
                 if (dup != null) {

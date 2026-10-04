@@ -6,6 +6,7 @@ import java.util.UUID
 
 sealed interface LayerIntent {
     data class AddLayer(val name: String? = null) : LayerIntent
+    data class AddPhotoLayer(val layer: Layer) : LayerIntent
     data class DeleteLayer(val id: UUID) : LayerIntent
     data class DuplicateLayer(val id: UUID) : LayerIntent
     data class ReorderLayer(val fromIndex: Int, val toIndex: Int) : LayerIntent
@@ -52,6 +53,19 @@ object LayerReducer {
                     add(insertIdx, newLayer)
                 }
                 state.copy(layers = newLayers, activeLayerId = newLayer.id)
+            }
+
+            is LayerIntent.AddPhotoLayer -> {
+                if (state.layers.any { it.id == intent.layer.id }) {
+                    state.copy(activeLayerId = intent.layer.id)
+                } else {
+                    val activeIdx = state.layers.indexOfFirst { it.id == state.activeLayerId }
+                    val insertIdx = if (activeIdx >= 0) activeIdx + 1 else state.layers.size
+                    val newLayers = state.layers.toMutableList().apply {
+                        add(insertIdx, intent.layer)
+                    }
+                    state.copy(layers = newLayers, activeLayerId = intent.layer.id)
+                }
             }
 
             is LayerIntent.DeleteLayer -> {

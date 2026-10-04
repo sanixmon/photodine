@@ -1,5 +1,13 @@
 package dev.photodine.feature.tools
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FlipToFront
+import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.ui.graphics.vector.ImageVector
+
 enum class ActiveTool {
     BRUSH,
     ERASER,
@@ -7,12 +15,12 @@ enum class ActiveTool {
     CROP
 }
 
-enum class PixelLabTab(val label: String, val icon: String) {
-    PRESETS("Presets", "◫"),
-    DRAW("Draw", "🖌"),
-    OBJECT("Object", "⬡"),
-    CANVAS("Canvas", "❐"),
-    COLOR("Color", "🎨")
+enum class PixelLabTab(val label: String, val icon: ImageVector) {
+    PRESETS("Presets", Icons.Filled.GridOn),
+    DRAW("Draw", Icons.Filled.Edit),
+    OBJECT("Object", Icons.Filled.FlipToFront),
+    CANVAS("Canvas", Icons.Filled.Crop),
+    COLOR("Color", Icons.Filled.Palette)
 }
 
 data class ToolsState(

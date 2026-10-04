@@ -10,8 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,10 +32,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.photodine.core.engine.CropRect
+import dev.photodine.core.engine.Layer
 import dev.photodine.core.engine.LayerTransform
 import dev.photodine.feature.canvas.stroke.CatmullRomSpline
 import dev.photodine.feature.canvas.stroke.StrokePoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 /**
@@ -50,6 +57,8 @@ fun CanvasRoute(
     eraserSize: Float = 30f,
     activeLayerId: UUID? = null,
     activeLayerTransform: LayerTransform? = null,
+    isEyedropperActive: Boolean = false,
+    onPhotoLayerCreated: ((Layer) -> Unit)? = null,
     onCanvasTapped: ((x: Float, y: Float) -> Unit)? = null,
     onConfirmCrop: ((CropRect) -> Unit)? = null,
     onCancelCrop: (() -> Unit)? = null,
@@ -70,9 +79,17 @@ fun CanvasRoute(
         if (uri != null) {
             coroutineScope.launch {
                 isImporting = true
-                val bitmap = ImageImporter.decodeBitmap(context, uri)
+                val bitmap = withContext(Dispatchers.IO) {
+                    ImageImporter.decodeBitmap(context, uri)
+                }
                 if (bitmap != null) {
-                    viewModel.compositor.addLayerFromBitmap(bitmap, "Imported Photo")
+                    val created = withContext(Dispatchers.IO) {
+                        viewModel.compositor.addLayerFromBitmap(bitmap, "Imported Photo")
+                    }
+                    runCatching { bitmap.recycle() }
+                    if (created.textureId != 0) {
+                        onPhotoLayerCreated?.invoke(created)
+                    }
                 }
                 isImporting = false
             }
@@ -83,7 +100,7 @@ fun CanvasRoute(
         viewModel.onIntent(CanvasViewModel.CanvasIntent.InitCanvas(width, height))
     }
 
-    val isDrawing = activeToolName == "BRUSH" || activeToolName == "ERASER"
+    val isDrawing = (activeToolName == "BRUSH" || activeToolName == "ERASER") && !isEyedropperActive
     val isEraser = activeToolName == "ERASER"
     val strokeSize = if (isEraser) eraserSize else brushSize
 
@@ -190,7 +207,10 @@ fun CanvasRoute(
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                     shape = androidx.compose.foundation.shape.CircleShape
                 ) {
-                    Text("↶")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Undo,
+                        contentDescription = "Undo"
+                    )
                 }
                 FilledTonalButton(
                     onClick = { onRedoClicked?.invoke() },
@@ -198,7 +218,10 @@ fun CanvasRoute(
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                     shape = androidx.compose.foundation.shape.CircleShape
                 ) {
-                    Text("↷")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Redo,
+                        contentDescription = "Redo"
+                    )
                 }
             }
 

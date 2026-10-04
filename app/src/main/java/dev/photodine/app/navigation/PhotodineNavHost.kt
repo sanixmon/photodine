@@ -10,8 +10,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -35,6 +41,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.photodine.feature.canvas.CanvasRoute
+import dev.photodine.feature.canvas.CanvasViewModel
 import dev.photodine.feature.canvas.ImageImporter
 import dev.photodine.feature.canvas.NewCanvasRoute
 import dev.photodine.feature.colorpicker.ColorPickerBottomSheet
@@ -46,7 +53,9 @@ import dev.photodine.feature.tools.ActiveTool
 import dev.photodine.feature.tools.ToolsIntent
 import dev.photodine.feature.tools.ToolsRoute
 import dev.photodine.feature.tools.ToolsViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object PhotodineRoutes {
     const val NEW_CANVAS = "new-canvas"
@@ -91,7 +100,8 @@ private fun CanvasScreen(
     height: Int,
     navController: NavController,
     toolsViewModel: ToolsViewModel = hiltViewModel(),
-    layersViewModel: LayersViewModel = hiltViewModel()
+    layersViewModel: LayersViewModel = hiltViewModel(),
+    canvasViewModel: CanvasViewModel = hiltViewModel()
 ) {
     val toolsState by toolsViewModel.state.collectAsState()
     val layersState by layersViewModel.state.collectAsState()
@@ -101,6 +111,7 @@ private fun CanvasScreen(
     var showLayersPanel by remember { mutableStateOf(false) }
     var showAddMenu by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var isEyedropperActive by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -110,9 +121,17 @@ private fun CanvasScreen(
     ) { uri ->
         if (uri != null) {
             coroutineScope.launch {
-                val bitmap = ImageImporter.decodeBitmap(context, uri)
+                val bitmap = withContext(Dispatchers.IO) {
+                    ImageImporter.decodeBitmap(context, uri)
+                }
                 if (bitmap != null) {
-                    layersViewModel.onIntent(LayerIntent.AddLayer("Photo"))
+                    val created = withContext(Dispatchers.IO) {
+                        canvasViewModel.compositor.addLayerFromBitmap(bitmap, "Photo")
+                    }
+                    runCatching { bitmap.recycle() }
+                    if (created.textureId != 0) {
+                        layersViewModel.onIntent(LayerIntent.AddPhotoLayer(created))
+                    }
                 }
             }
         }
@@ -168,6 +187,21 @@ private fun CanvasScreen(
                 eraserSize = toolsState.eraserSize,
                 activeLayerId = layersState.activeLayerId,
                 activeLayerTransform = layersState.activeLayer?.transform,
+                isEyedropperActive = isEyedropperActive,
+                onPhotoLayerCreated = { layer ->
+                    layersViewModel.onIntent(LayerIntent.AddPhotoLayer(layer))
+                },
+                onCanvasTapped = { x, y ->
+                    if (isEyedropperActive) {
+                        coroutineScope.launch {
+                            val sampled = withContext(Dispatchers.IO) {
+                                canvasViewModel.compositor.readPixel(x.toInt(), y.toInt())
+                            }
+                            toolsViewModel.onIntent(ToolsIntent.SetBrushColor(sampled))
+                            isEyedropperActive = false
+                        }
+                    }
+                },
                 onExportClicked = { showExportSheet = true },
                 modifier = Modifier.fillMaxSize()
             )
@@ -199,14 +233,14 @@ private fun CanvasScreen(
                 onDismissRequest = { showAddMenu = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("🖼 From Gallery") },
+                    text = { Text("From Gallery") },
                     onClick = {
                         showAddMenu = false
                         galleryLauncher.launch("image/*")
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("📄 Add Blank Layer") },
+                    text = { Text("Add Blank Layer") },
                     onClick = {
                         showAddMenu = false
                         layersViewModel.onIntent(LayerIntent.AddLayer())
@@ -220,21 +254,21 @@ private fun CanvasScreen(
                 onDismissRequest = { showOverflowMenu = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("📐 1:1 Square (1080×1080)") },
+                    text = { Text("1:1 Square (1080×1080)") },
                     onClick = {
                         showOverflowMenu = false
                         navController.navigate(PhotodineRoutes.canvasRoute(1080, 1080))
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("📱 9:16 Story (1080×1920)") },
+                    text = { Text("9:16 Story (1080×1920)") },
                     onClick = {
                         showOverflowMenu = false
                         navController.navigate(PhotodineRoutes.canvasRoute(1080, 1920))
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("🖼 16:9 Landscape (1920×1080)") },
+                    text = { Text("16:9 Landscape (1920×1080)") },
                     onClick = {
                         showOverflowMenu = false
                         navController.navigate(PhotodineRoutes.canvasRoute(1920, 1080))
@@ -254,7 +288,10 @@ private fun CanvasScreen(
                     onColorSelected = { color ->
                         toolsViewModel.onIntent(ToolsIntent.SetBrushColor(color))
                     },
-                    onEyedropperClicked = { showColorPicker = false }
+                    onEyedropperClicked = {
+                        isEyedropperActive = true
+                        showColorPicker = false
+                    }
                 )
             }
         }
@@ -281,13 +318,20 @@ fun PixelLabTopBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left: Add (+), Save/Export (💾)
+            // Left: Add, Save/Export
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onAddClicked) {
-                    Text("+", fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Add layer",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
                 IconButton(onClick = onExportClicked) {
-                    Text("💾", fontSize = 18.sp)
+                    Icon(
+                        imageVector = Icons.Outlined.Save,
+                        contentDescription = "Save and export"
+                    )
                 }
             }
 
@@ -298,16 +342,26 @@ fun PixelLabTopBar(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            // Right: Crop (✂), Layers (⧉), Overflow (⋮)
+            // Right: Crop, Layers, Overflow
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onCropClicked) {
-                    Text("✂", fontSize = 16.sp)
+                    Icon(
+                        imageVector = Icons.Filled.Crop,
+                        contentDescription = "Crop"
+                    )
                 }
                 IconButton(onClick = onLayersToggle) {
-                    Text("⧉", fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        imageVector = Icons.Filled.Layers,
+                        contentDescription = "Layers",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
                 IconButton(onClick = onOverflowClicked) {
-                    Text("⋮", fontSize = 20.sp)
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "Canvas presets"
+                    )
                 }
             }
         }

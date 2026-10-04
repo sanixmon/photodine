@@ -25,7 +25,20 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ThreedRotation
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -38,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -210,23 +224,23 @@ fun PixelLabBottomController(
             ) {
                 when (state.selectedTab) {
                     PixelLabTab.PRESETS -> {
-                        PixelLabActionChip(icon = "📐", label = "1:1") {
+                        PixelLabActionChip(label = "1:1") {
                             onNewPresetSelected?.invoke(1080, 1080)
                         }
-                        PixelLabActionChip(icon = "📱", label = "9:16") {
+                        PixelLabActionChip(label = "9:16") {
                             onNewPresetSelected?.invoke(1080, 1920)
                         }
-                        PixelLabActionChip(icon = "🖼", label = "16:9") {
+                        PixelLabActionChip(label = "16:9") {
                             onNewPresetSelected?.invoke(1920, 1080)
                         }
-                        PixelLabActionChip(icon = "🔍", label = "2048") {
+                        PixelLabActionChip(label = "2048") {
                             onNewPresetSelected?.invoke(2048, 2048)
                         }
                     }
 
                     PixelLabTab.DRAW -> {
                         PixelLabActionChip(
-                            icon = "🖌",
+                            icon = Icons.Filled.Edit,
                             label = "Brush",
                             isSelected = state.activeTool == ActiveTool.BRUSH
                         ) {
@@ -234,62 +248,62 @@ fun PixelLabBottomController(
                             if (!state.isOptionsVisible) onIntent(ToolsIntent.ToggleOptions)
                         }
                         PixelLabActionChip(
-                            icon = "🧹",
+                            icon = Icons.Filled.Delete,
                             label = "Eraser",
                             isSelected = state.activeTool == ActiveTool.ERASER
                         ) {
                             onIntent(ToolsIntent.SelectTool(ActiveTool.ERASER))
                             if (!state.isOptionsVisible) onIntent(ToolsIntent.ToggleOptions)
                         }
-                        PixelLabActionChip(icon = "🎨", label = "Color") {
+                        PixelLabActionChip(icon = Icons.Filled.ColorLens, label = "Color") {
                             onColorSwatchClicked?.invoke()
                         }
-                        PixelLabActionChip(icon = "⚙", label = "Options") {
+                        PixelLabActionChip(icon = Icons.Filled.MoreVert, label = "Options") {
                             onIntent(ToolsIntent.ToggleOptions)
                         }
                     }
 
                     PixelLabTab.OBJECT -> {
                         PixelLabActionChip(
-                            icon = "✥",
+                            icon = Icons.Filled.ThreedRotation,
                             label = "Move",
                             isSelected = state.activeTool == ActiveTool.MOVE
                         ) {
                             onIntent(ToolsIntent.SelectTool(ActiveTool.MOVE))
                             if (!state.isOptionsVisible) onIntent(ToolsIntent.ToggleOptions)
                         }
-                        PixelLabActionChip(icon = "📋", label = "Copy") {
+                        PixelLabActionChip(icon = Icons.Filled.ContentCopy, label = "Copy") {
                             onDuplicateLayerClicked?.invoke()
                         }
-                        PixelLabActionChip(icon = "🗑", label = "Delete") {
+                        PixelLabActionChip(icon = Icons.Filled.Delete, label = "Delete") {
                             onDeleteLayerClicked?.invoke()
                         }
-                        PixelLabActionChip(icon = "⧉", label = "Layers") {
+                        PixelLabActionChip(icon = Icons.Filled.Layers, label = "Layers") {
                             onLayersToggleClicked?.invoke()
                         }
                     }
 
                     PixelLabTab.CANVAS -> {
                         PixelLabActionChip(
-                            icon = "✂",
+                            icon = Icons.Filled.Crop,
                             label = "Crop",
                             isSelected = state.activeTool == ActiveTool.CROP
                         ) {
                             onIntent(ToolsIntent.SelectTool(ActiveTool.CROP))
                         }
-                        PixelLabActionChip(icon = "🖼", label = "+ Photo") {
+                        PixelLabActionChip(icon = Icons.Filled.Image, label = "+ Photo") {
                             onOpenGalleryClicked?.invoke()
                         }
-                        PixelLabActionChip(icon = "💾", label = "Export") {
+                        PixelLabActionChip(icon = Icons.Filled.Share, label = "Export") {
                             onExportClicked?.invoke()
                         }
-                        PixelLabActionChip(icon = "⧉", label = "Layers") {
+                        PixelLabActionChip(icon = Icons.Filled.Layers, label = "Layers") {
                             onLayersToggleClicked?.invoke()
                         }
                     }
 
                     PixelLabTab.COLOR -> {
-                        PixelLabActionChip(icon = "🎨", label = "Wheel") {
+                        PixelLabActionChip(icon = Icons.Filled.Palette, label = "Wheel") {
                             onColorSwatchClicked?.invoke()
                         }
                         // Quick color swatches
@@ -342,10 +356,11 @@ fun PixelLabBottomController(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            text = tab.icon,
-                            fontSize = 18.sp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                        Icon(
+                            imageVector = tab.icon,
+                            contentDescription = tab.label,
+                            tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = tab.label,
@@ -362,8 +377,8 @@ fun PixelLabBottomController(
 
 @Composable
 private fun PixelLabActionChip(
-    icon: String,
     label: String,
+    icon: ImageVector? = null,
     isSelected: Boolean = false,
     onClick: () -> Unit
 ) {
@@ -387,7 +402,13 @@ private fun PixelLabActionChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(text = icon, fontSize = 14.sp)
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
             Text(
                 text = label,
                 fontSize = 12.sp,
