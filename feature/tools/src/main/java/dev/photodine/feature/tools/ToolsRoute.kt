@@ -38,7 +38,7 @@ import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ThreedRotation
+import androidx.compose.material.icons.filled._3dRotation
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -265,7 +265,7 @@ fun PixelLabBottomController(
 
                     PixelLabTab.OBJECT -> {
                         PixelLabActionChip(
-                            icon = Icons.Filled.ThreedRotation,
+                            icon = Icons.Filled._3dRotation,
                             label = "Move",
                             isSelected = state.activeTool == ActiveTool.MOVE
                         ) {
