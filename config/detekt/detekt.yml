@@ -1,0 +1,21 @@
+# Photodine detekt configuration (detekt 1.23.x). Unspecified sections use detekt defaults.
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+complexity:
+  active: true
+  LongParameterList:
+    active: false
+
+style:
+  active: true
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+  ReturnCount:
+    active: true
+    max: 3
+
+naming:
+  active: true
